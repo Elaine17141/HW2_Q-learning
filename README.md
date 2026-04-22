@@ -18,19 +18,30 @@
   - 折扣因子 ($\gamma$, Gamma): `0.9`
   - 訓練回合數 (Episodes): `500`
 
-## 📊 Results
+## 📊 結果分析 (Results Analysis)
 
-### 累積獎勵曲線比較 (Learning Curve)
-*(透過 Moving Average 平滑化以方便比較兩者趨勢)*
-
+### 1. 學習表現與收斂性 (Learning Performance & Stability)
 ![Learning Curve](./rewards_curve.png)
 
-### 最終路徑策略對比 (Policy Maps)
+從累積獎勵曲線可以觀察到：
+* **Q-learning** 的波動非常劇烈，且在整個訓練過程中，其平均獎勵一直處於較低（負值較大）的狀態。這是因為 Q-learning 學習到了貼著懸崖的最短路徑，但在 $\epsilon$-greedy 策略的探索機制下，有 10% 的機率會發生隨機行為，導致它頻繁地掉入懸崖並獲得 -100 的巨大懲罰。
+* **SARSA** 雖然在初始學習階段同樣會經歷波動，但它很快就收斂到一個相對穩定且較高的平均獎勵。這是因為 SARSA 學習到了一條遠離懸崖的安全路徑，成功避開了探索時因「手抖」而摔落懸崖的風險。
 
-| Algorithm | Policy Map | Behavior Analysis |
-| :---: | :--- | :--- |
-| **SARSA**<br>*(On-policy)* | ![SARSA Policy](./sarsa_policy.png) | **保守策略 (Conservative)**<br>因為更新時會考量 $\epsilon$-greedy 的隨機性，深知靠近懸崖有 10% 機率因隨機探索而跌落。為規避此風險，SARSA 選擇繞遠路的安全路徑，換取訓練期更高的平均累積獎勵。 |
-| **Q-learning**<br>*(Off-policy)* | ![Q-learning Policy](./q_learning_policy.png) | **激進最佳策略 (Aggressive/Optimal)**<br>更新時永遠樂觀外推，假設未來總是採取最佳行動 ($\max Q$)，忽略了實際執行時必定有的隨機抖動。最終學到貼近懸崖邊的理論最短路徑，但訓練期很容易因手抖而摔落。 |
+### 2. 策略行為與理論對比 (Strategic Behavior & Theoretical Contrast)
+
+| 演算法 | 策略路徑圖 | 本質差異與行為解釋 |
+| :---: | :---: | :--- |
+| **Q-learning**<br>*(Off-policy)* | ![Q-learning Policy](./q_learning_policy.png) | **理論最佳、行為激進 (Aggressive)**<br>Q-learning 更新時使用的是 $\max_a Q(S', a)$，它永遠**樂觀地假設**未來會採取最佳行動，完全忽略了現實中 $\epsilon$-greedy 帶來的隨機性。因此，它找到了理論上的最短路徑（貼著懸崖走），但代價是在訓練期間經常因隨機探索而墜崖。 |
+| **SARSA**<br>*(On-policy)* | ![SARSA Policy](./sarsa_policy.png) | **考量現實、行為保守 (Conservative)**<br>SARSA 更新時使用的是實際採取的行動 $Q(S', A')$。由於它**真實感受到** $\epsilon$-greedy 探索帶來的墜崖風險，為了在訓練過程中最大化期望報酬，它學會了「繞遠路」來確保安全。這條路徑雖然較長，但非常安穩。 |
+
+## 🎯 結論 (Conclusion)
+
+根據上述的實驗結果，我們總結出兩種演算法的適用場景：
+
+* **Q-learning (適合完美的模擬環境)**：
+  由於它不受當下探索策略的干擾，能夠穩定收斂到**絕對最佳解 (Optimal Policy)**。如果環境是純粹的電腦模擬器，且在最終部署測試時可以將 $\epsilon$ 降為 0（取消探索），那麼 Q-learning 是極佳的選擇，因為它的最終策略是最有效率的。
+* **SARSA (適合真實物理世界 / 機器人應用)**：
+  由於它將探索的風險（如馬達的硬體誤差、隨機抖動）也一併納入學習考量中，學出來的策略更加**強健且安全 (Safe & Robust)**。在現實世界的機器人應用中，跌入懸崖（硬體損壞）的成本是不可逆且極其昂貴的，這時候 SARSA 這種會主動規避高風險區域的保守演算法將會是首選。
 
 ## 🚀 How to Run
 
