@@ -15,7 +15,7 @@
 - **Hyperparameters**:
   - 探索率 ($\epsilon$, Epsilon): `0.1`
   - 學習率 ($\alpha$, Alpha): `0.5`
-  - 折扣因子 ($\gamma$, Gamma): `0.9`
+  - 折扣因子 ($\gamma$, Gamma): `1.0` (Undiscounted Task)
   - 訓練回合數 (Episodes): `500`
 
 ## 📊 結果分析 (Results Analysis)
@@ -53,7 +53,7 @@ pip install -r requirements.txt
 ```
 
 ### 2. 執行主程式
-本專案已經將環境、演算法訓練與圖表繪製整合，只要執行以下指令，即會進行 500 回合訓練並在當下目錄產出相應結果圖：
+本專案已經將環境、演算法訓練與圖表繪製整合，只要執行以下指令，程式會自動進行 **50 次獨立的 500 回合訓練並取平均**，以呈現最真實且符合教科書的收斂結果圖：
 
 ```bash
 python plot_results.py

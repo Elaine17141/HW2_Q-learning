@@ -1,43 +1,28 @@
 import sys
 import os
 
-# [測試代碼] 檢查 sys.path 是否包含當前目錄
-print("=== 系統路徑檢查 ===")
-print("當前檔案所在目錄:", os.path.dirname(os.path.abspath(__file__)))
-print("當前 sys.path 列表:")
-for p in sys.path:
-    print(" -", p)
-print("====================\n")
+# 路徑保護：確保當前目錄被加入 sys.path，解決跨目錄執行時的模組找不到問題
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
 
 import numpy as np
 import matplotlib.pyplot as plt
 from cliff_walking import CliffWalkingEnv
 from rl_algorithms import run_sarsa, run_q_learning
 
-def moving_average(a, n=10):
-    """計算移動平均值，讓曲線更加平滑易讀"""
-    ret = np.cumsum(a, dtype=float)
-    ret[n:] = ret[n:] - ret[:-n]
-    return ret[n - 1:] / n
-
 def plot_rewards(sarsa_rewards, q_rewards):
     """繪製 500 回合的累積獎勵曲線"""
     plt.figure(figsize=(10, 6))
     
-    # 建議加上移動平均以去除噪音，讓趨勢比較明顯
-    sarsa_ma = moving_average(sarsa_rewards, 10)
-    q_ma = moving_average(q_rewards, 10)
+    x = np.arange(1, len(sarsa_rewards) + 1)
     
-    # 移動平均後長度會減少，設定對應的 X 軸讓圖表對齊
-    x = np.arange(10, len(sarsa_rewards) + 1)
-    
-    plt.plot(x, sarsa_ma, label='SARSA', color='blue')
-    plt.plot(x, q_ma, label='Q-learning', color='red')
+    plt.plot(x, sarsa_rewards, label='Sarsa', color='c')
+    plt.plot(x, q_rewards, label='Q-learning', color='r')
     
     plt.xlabel('Episodes')
-    plt.ylabel('Sum of rewards during episode (Smoothed)')
-    plt.title('SARSA vs Q-learning on Cliff Walking (500 Episodes)')
-    # 最佳路徑的獎勵為 -13，安全路徑為 -17。原本的 [-100, -20] 會導致最後收斂的線條消失在圖表上方
+    plt.ylabel('Reward Sum for Episode')
+    plt.title('Sarsa Vs. Q-Learning Cliff Walking\nEpsilon=0.1, Alpha=0.5\n(averaged over 50 runs)')
     plt.ylim([-100, 0]) 
     plt.legend()
     plt.grid(True)
@@ -96,14 +81,29 @@ def plot_policy(policy, title, filename):
 if __name__ == "__main__":
     env = CliffWalkingEnv()
     
-    print("訓練 SARSA...")
-    sarsa_q, sarsa_rewards = run_sarsa(env, episodes=500)
+    runs = 50
+    episodes = 500
     
-    print("訓練 Q-learning...")
-    q_q, q_rewards = run_q_learning(env, episodes=500)
+    all_sarsa_rewards = np.zeros((runs, episodes))
+    all_q_rewards = np.zeros((runs, episodes))
+    
+    print(f"開始執行 {runs} 次獨立訓練來平均結果...")
+    for r in range(runs):
+        print(f"執行第 {r+1}/{runs} 次訓練...", end="\r")
+        # 教科書與老師圖表參數：gamma=1.0, alpha=0.5
+        sarsa_q, sarsa_rewards = run_sarsa(env, episodes=episodes, alpha=0.5, gamma=1.0)
+        q_q, q_rewards = run_q_learning(env, episodes=episodes, alpha=0.5, gamma=1.0)
+        
+        all_sarsa_rewards[r] = sarsa_rewards
+        all_q_rewards[r] = q_rewards
+    
+    print("\n訓練完成！")
+    
+    avg_sarsa_rewards = np.mean(all_sarsa_rewards, axis=0)
+    avg_q_rewards = np.mean(all_q_rewards, axis=0)
     
     # 畫學習曲線
-    plot_rewards(sarsa_rewards, q_rewards)
+    plot_rewards(avg_sarsa_rewards, avg_q_rewards)
     
     # 取得策略並畫圖
     sarsa_policy = get_best_policy(sarsa_q)

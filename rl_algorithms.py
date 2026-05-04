@@ -16,7 +16,7 @@ def epsilon_greedy_policy(Q, state, epsilon, n_actions):
         best_actions = np.where(q_values == max_q)[0]
         return np.random.choice(best_actions)
 
-def run_sarsa(env, episodes=500, alpha=0.5, gamma=0.9, epsilon=0.1):
+def run_sarsa(env, episodes=500, alpha=0.5, gamma=1.0, epsilon=0.1):
     """
     SARSA 演算法 (On-policy)
     """
@@ -58,7 +58,7 @@ def run_sarsa(env, episodes=500, alpha=0.5, gamma=0.9, epsilon=0.1):
         
     return Q, rewards_per_episode
 
-def run_q_learning(env, episodes=500, alpha=0.5, gamma=0.9, epsilon=0.1):
+def run_q_learning(env, episodes=500, alpha=0.5, gamma=1.0, epsilon=0.1):
     """
     Q-learning 演算法 (Off-policy)
     """
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     
     episodes = 500
     alpha = 0.5
-    gamma = 0.9
+    gamma = 1.0
     epsilon = 0.1
     
     print("--- 執行 SARSA ---")

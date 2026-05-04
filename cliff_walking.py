@@ -1,3 +1,11 @@
+import sys
+import os
+
+# 路徑保護：確保當前目錄被加入 sys.path，解決跨目錄執行時的模組找不到問題
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
 import numpy as np
 
 class CliffWalkingEnv:
